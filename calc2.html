@@ -1,0 +1,467 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Math Parser in pure JavaScript</title>
+		<style>
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * Body-Style
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			body
+			{
+				font-family: Courier;
+			}
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * Input field
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			input
+			{
+				box-shadow: inset 4px 4px 4px rgba(0,0,0,0.08);
+				border: 1px solid rgb(160, 160, 160);
+				border-radius: 10px;
+				text-align: right;
+				padding: 8px;
+				width: 400px;
+			}
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * p-tag
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			p
+			{
+				width: 400px;
+				line-height: 20px;
+			}
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * result-Box
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			#result
+			{
+				line-height: 24px;
+				width: 400px;
+				margin-top: 30px;
+			}
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * info-box
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			#info
+			{
+				border-top: 1px dashed rgb(200,200,200);
+				padding-top: 30px;
+				margin-top: 30px;
+				font-size: 10px;
+				width: 300px;
+			}
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * stepover-box
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			#stepover
+			{
+				border-left: 1px dashed rgb(200,200,200);
+				padding-left: 30px;
+				margin-left: 30px;
+			}
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * steps-box
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			#steps
+			{
+				line-height: 36px;
+				font-size: 10px;
+			}
+			#steps div
+			{
+				border-bottom: 1px dashed rgb(200,200,200);
+				padding: 5px auto;
+			}
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * Button general style
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			button
+			{
+				border: 1px solid rgb(160, 170, 190);
+				text-align: center;
+				padding: 20px 10px;
+				cursor: pointer;
+				width: 90px;
+				margin: 1px;
+			}
+		</style>
+	</head>
+	<body>
+
+		<!-- Grid -->
+		<div style = "display: flex;">
+
+			<!-- Left side : Calculator -->
+			<div>
+
+				<!-- Prompt -->
+				<p>
+				Type your term: <br />
+				</p>
+
+				<!-- Input field -->
+				<input type = "text" id = "expression" />
+				<br />
+
+				<!-- Buttons -->
+				<button id = "ac">AC</button>
+				<button id = "rm">Remove</button>
+				<button id = "re">=</button>
+				<button id = "di">/</button>
+				<br />
+				<button id = "n7">7</button>
+				<button id = "n8">8</button>
+				<button id = "n9">9</button>
+				<button id = "mp">*</button>
+				<br />
+				<button id = "n4">4</button>
+				<button id = "n5">5</button>
+				<button id = "n6">6</button>
+				<button id = "mi">-</button>
+				<br />
+				<button id = "n1">1</button>
+				<button id = "n2">2</button>
+				<button id = "n3">3</button>
+				<button id = "ad">+</button>
+				<br />
+				<button id = "n0">0</button>
+				<button id = "np">,</button>
+				<button id = "bo">(</button>
+				<button id = "bc">)</button>
+
+				<!-- Result box -->
+				<div id = "result">
+					Input something like <br />
+					( 2 + ( 3 * 6 ) ) - 4 <br />
+					and click on "=".
+				</div>
+
+				<!-- Info box -->
+				<div id = "info">
+					Check up the console to see the steps
+					<br /><br />
+					Calculation parser with bracket-support by 
+					Abdülaziz Kurt (abdkurt1982@gmail.com)
+				</div>
+
+			</div>
+
+			<!-- Right side : Steps -->
+			<div id = "stepover">
+				<h3>Steps</h3>
+				<div id = "steps">
+					<i>no steps yet</i>
+				</div>
+			</div>
+
+		</div>
+
+		<!-- JavaScript -->
+		<script>
+			// The result-box will be connected to javascript
+			const output = document.getElementById("result");
+
+			// The steps-box will be connected to javascript
+			const steps = document.getElementById("steps");
+
+			// The default text color is blue
+			output.style.color = "blue";
+
+			// The global variables are needed to store
+			// the step-result and remember the needed
+			// operator for the correct operation
+			let result = 0.0;
+			let opertr = 0;
+
+			// Recognize an error
+			let errstate = false;
+			let errtoken = "";
+
+			// Find out if the given value is a valid
+			// numeric number like an integer or a
+			// floating point number. To dertermine
+			// it, it's enough to check up the used
+			// characters. Allowed are only 0-9 and
+			// the point "." character. Otherwise we
+			// do not have a valid number!
+			const isNum = ( value ) =>
+			{
+				for ( let c = 0; c < value.length; c++ )
+				{
+					switch ( value[c] )
+					{
+						case '0': case '1': case '2': 
+						case '3': case '4': case '5': 
+						case '6': case '7': case '8': 
+						case '9': case '.': 
+							break;
+						default:
+							return false;
+					}
+				}
+				if ( value )
+					return true;
+				else
+					return false;
+			}
+
+			// Check the given token and if an operator
+			// is given, calcualte in the right operation.
+			// If a non-number token is given, it will
+			// result in an error!
+			const term = ( token ) =>
+			{
+				switch ( token[0] )
+				{
+					case '+':
+						opertr = 1;
+						break;
+					case '-':
+						opertr = 2;
+						break;
+					case '*':
+						opertr = 3;
+						break;
+					case '/': case ':':
+						opertr = 4;
+						break;
+					default:
+						if ( isNum( token ) == false )
+						{
+							output.innerHTML = "Syntax error: Number expected <br /> <small><i><u>" + token + "</u> is not a valid number</i></small>";
+							output.style.color = "red";
+							errtoken = token;
+							errstate = true;
+							return;
+						}
+						else
+							{
+								switch ( opertr )
+								{
+									case 0:
+										result = parseFloat(token);
+										break;
+									case 1:
+										result += parseFloat(token);
+										break;
+									case 2:
+										result -= parseFloat(token);
+										break;
+									case 3:
+										result *= parseFloat(token);
+										break;
+									case 4:
+										result /= parseFloat(token);
+										break;
+								}
+							}
+						break;
+				}
+			}
+
+			// The event-handler
+			const calculate = (event) =>
+			{
+				// Read the given expression in the input-field
+				const stream = document.getElementById("expression").value;
+				// We need an array for each bracket-operation
+				let bracket = [];
+				// We need an index for the array
+				let index = 0;
+				// The temporary variable is for modify an expression
+				let temp = "";
+				// The token variable is to collect the characters
+				// of a given numeric value
+				let token = "";
+				// For start, the first bracket-entry is empty
+				bracket[index] = "";
+				// Clear the console
+				console.clear;
+				// Clear the steps
+				steps.innerHTML = "";
+				// Interate through the characters of the expression
+				for ( let c = 0; c < stream.length; c++ )
+				{
+					// Find bracket-fields
+					switch( stream[c] )
+					{
+						// When starting a new bracket, notice that
+						// and begin a new array-entry
+						case '(':
+							bracket[index] += '$';
+							index++;
+							bracket[index] = "";
+							break;
+						case ')':
+							// Leave the array-entry back 
+							// to the entry before
+							index--;
+							break;
+						default:
+							// Collect the characters to the
+							// current array-entry
+							bracket[index] += stream[c];
+							break;
+					}
+				}
+
+				// If the index is not 0 that means, there is 
+				// an open bracket, which is not closed or a
+				// bracket-close-character without a start-character.
+				// This ends up in an error.
+				if ( index != 0 )
+				{
+							steps.innerHTML = "<i>no steps yet</i>";
+							output.innerHTML = "Syntax error: Bracket problem";
+							output.style.color = "red";
+							return;
+				}
+
+				// We loop the bracket contents from the latest to
+				// the first. From down to up!
+				r = bracket.length;
+
+				// Start looping
+				while( r != 0 ) 
+				{
+					// Decrease the index of the bracket-array
+					r--;
+					// Clear the temporary string
+					temp = "";
+					// Loop the array-entry-content
+					for ( let c = 0; c < bracket[r].length; c++ )
+					{
+						switch( bracket[r][c] )
+						{
+							// The white-space, tabulator, cr and lf characters
+							// are not needed characters, therefor we ignore
+							// them for the term(), but collect them for the
+							// temporary string.
+							case ' ': case '\t': case '\r': case '\n':
+								temp += bracket[r][c];
+								break;
+							// The $ is a placeholder for a bracket-entry in
+							// the upper-level entry, which points to it. 
+							// Therefore we replace the $ character by the
+							// calcualte result of the specific bracket-entry.
+							case '$':
+								temp += bracket[r+1];
+								term( bracket[r+1] );
+								token = "";
+								break;
+							// Before start an operation, we check if a valid
+							// token-number has been read and send it to the
+							// term() function, after then, we run the 
+							// operation.
+							case '+': case '-': case '*': case '/': case ':':
+								temp += bracket[r][c];
+								if ( token )
+									term( token );
+								term( bracket[r][c] );
+								token = "";
+								break;
+							// Collect the characters for the token
+							default:
+								temp += bracket[r][c];
+								token += bracket[r][c];
+								break;
+						}
+					}
+					// After the iteration complete, we check if there
+					// is one more token to send to the term()-function.
+					if ( token )
+						term( token );
+					// Output the array-entry content in the console
+					console.log(temp + " = " + result);
+					// Write the next step
+					steps.innerHTML += '<div>' + temp + " = " + result + '</div>';
+					// Update the array-entry with the result of 
+					// the specific operation
+					bracket[r] = result;
+					// Clear the global variables to use them
+					// for the next operation
+					result = 0.0;
+					opertr = 0;
+					token = "";
+				}
+
+				// If an term-error has been determined, we haven't a 
+				// valid result.
+				if ( errstate === false )
+				{
+					output.innerHTML = "Calculation succeed :-)<br />" + 
+										event.target.value + " = " + bracket[0];
+					output.style.color = "green";
+				}
+				// Reset for the next possible input
+				errstate = false;
+			}
+
+			// To input into the input-field
+			const input = ( event ) =>
+			{
+				if ( event.target.innerText == ',' )
+					document.getElementById("expression").value += '.';
+				else
+					document.getElementById("expression").value += event.target.innerText;
+			}
+
+			// All Clear (AC)-Button event-Handler
+			document.getElementById("ac").addEventListener(
+				"click",
+				function( event )
+				{
+					result = 0.0;
+					opertr = 0;
+					token = "";
+					errstate = false;
+					errtoken = "";
+					output.style.color = "blue";
+					output.innerHTML = 'Input something like <br /> ( 2 + ( 3 * 6 ) ) - 4 <br /> and click on "=".';
+					document.getElementById("expression").value = "";
+				}
+			);
+
+			// Remove-Button event-Handler
+			document.getElementById("rm").addEventListener(
+				"click",
+				function( event )
+				{
+					const exprs = document.getElementById("expression");
+					let value = "";
+					if ( exprs.value.length > 1 )
+					{
+						for ( let c = 0; c < exprs.value.length - 1; c++ )
+							value += exprs.value[c];
+						exprs.value = value;
+					}
+					else
+						exprs.value = "";
+				}
+			);
+
+			// Calculation event-Handler
+			document.getElementById("re").addEventListener(
+				"click",
+				function( event )
+				{
+					calculate( event );
+				}
+			);
+
+			// Connect the input-event-handler to the "="-Button
+			let buttons = [ "di", "n7", "n8", "n9", "mp", "n4", "n5", "n6", 
+							"mi", "n1", "n2", "n3", "ad", "n0", "np", "bo", "bc" ];
+			for ( let b = 0; b < buttons.length; b++ )
+			{	
+				document.getElementById(buttons[b]).addEventListener(
+					"click",
+					function( event )
+					{
+						input( event );
+					}
+				);
+			}
+		</script>
+	</body>
+</html>

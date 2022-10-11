@@ -1,0 +1,324 @@
+<!doctype html>
+<html>
+	<head>
+		<title>Math Parser in pure JavaScript</title>
+		<style>
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * Body-Style
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			body
+			{
+				font-family: Courier;
+			}
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * Input field
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			input
+			{
+				box-shadow: inset 4px 4px 4px rgba(0,0,0,0.08);
+				border: 1px solid rgb(160, 160, 160);
+				border-radius: 10px;
+				padding: 8px;
+				width: 300px;
+			}
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * p-tag
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			p
+			{
+				width: 300px;
+				line-height: 20px;
+			}
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * result-Box
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			#result
+			{
+				line-height: 24px;
+				width: 300px;
+				margin-top: 30px;
+			}
+			/* * * * * * * * * * * * * * * * * * * * * * * * * *
+			 * info-box
+			 * * * * * * * * * * * * * * * * * * * * * * * * * */
+			#info
+			{
+				border-top: 1px dashed rgb(200,200,200);
+				padding-top: 30px;
+				margin-top: 30px;
+				font-size: 10px;
+				width: 300px;
+			}
+		</style>
+	</head>
+	<body>
+
+		<!-- Prompt -->
+		<p>
+		Enter your mathematical expression and press enter: <br />
+		</p>
+
+		<!-- Input field -->
+		<input type = "text" id = "expression" />
+
+		<!-- Result box -->
+		<div id = "result">
+			Write something like <br />
+			( 2 + ( 3 * 6 ) ) - 4 <br />
+			and press enter.
+		</div>
+
+		<!-- Info box -->
+		<div id = "info">
+			Check up the console to see the steps
+			<br /><br />
+			Calculation parser with bracket-support by 
+			Abdülaziz Kurt (abdkurt1982@gmail.com)
+		</div>
+
+		<!-- JavaScript -->
+		<script>
+			// The result-box will be connected to javascript
+			const output = document.getElementById("result");
+
+			// The default text color is blue
+			output.style.color = "blue";
+
+			// The global variables are needed to store
+			// the step-result and remember the needed
+			// operator for the correct operation
+			let result = 0.0;
+			let opertr = 0;
+
+			// Recognize an error
+			let errstate = false;
+			let errtoken = "";
+
+			// Find out if the given value is a valid
+			// numeric number like an integer or a
+			// floating point number. To dertermine
+			// it, it's enough to check up the used
+			// characters. Allowed are only 0-9 and
+			// the point "." character. Otherwise we
+			// do not have a valid number!
+			const isNum = ( value ) =>
+			{
+				for ( let c = 0; c < value.length; c++ )
+				{
+					switch ( value[c] )
+					{
+						case '0': case '1': case '2': 
+						case '3': case '4': case '5': 
+						case '6': case '7': case '8': 
+						case '9': case '.': 
+							break;
+						default:
+							return false;
+					}
+				}
+				if ( value )
+					return true;
+				else
+					return false;
+			}
+
+			// Check the given token and if an operator
+			// is given, calcualte in the right operation.
+			// If a non-number token is given, it will
+			// result in an error!
+			const term = ( token ) =>
+			{
+				switch ( token[0] )
+				{
+					case '+':
+						opertr = 1;
+						break;
+					case '-':
+						opertr = 2;
+						break;
+					case '*':
+						opertr = 3;
+						break;
+					case '/': case ':':
+						opertr = 4;
+						break;
+					default:
+						if ( isNum( token ) == false )
+						{
+							output.innerHTML = "Syntax error: Number expected <br /> <small><i><u>" + token + "</u> is not a valid number</i></small>";
+							output.style.color = "red";
+							errtoken = token;
+							errstate = true;
+							return;
+						}
+						else
+							{
+								switch ( opertr )
+								{
+									case 0:
+										result = parseFloat(token);
+										break;
+									case 1:
+										result += parseFloat(token);
+										break;
+									case 2:
+										result -= parseFloat(token);
+										break;
+									case 3:
+										result *= parseFloat(token);
+										break;
+									case 4:
+										result /= parseFloat(token);
+										break;
+								}
+							}
+						break;
+				}
+			}
+
+			// The event-handler
+			const input = (event) =>
+			{
+				// Read the given expression in the input-field
+				const stream = event.target.value;
+				// We need an array for each bracket-operation
+				let bracket = [];
+				// We need an index for the array
+				let index = 0;
+				// The temporary variable is for modify an expression
+				let temp = "";
+				// The token variable is to collect the characters
+				// of a given numeric value
+				let token = "";
+				// For start, the first bracket-entry is empty
+				bracket[index] = "";
+				// Clear the console
+				console.clear;
+				// Interate through the characters of the expression
+				for ( let c = 0; c < stream.length; c++ )
+				{
+					// Find bracket-fields
+					switch( stream[c] )
+					{
+						// When starting a new bracket, notice that
+						// and begin a new array-entry
+						case '(':
+							bracket[index] += '$';
+							index++;
+							bracket[index] = "";
+							break;
+						case ')':
+							// Leave the array-entry back 
+							// to the entry before
+							index--;
+							break;
+						default:
+							// Collect the characters to the
+							// current array-entry
+							bracket[index] += stream[c];
+							break;
+					}
+				}
+
+				// If the index is not 0 that means, there is 
+				// an open bracket, which is not closed or a
+				// bracket-close-character without a start-character.
+				// This ends up in an error.
+				if ( index != 0 )
+				{
+							output.innerHTML = "Syntax error: Bracket problem";
+							output.style.color = "red";
+							return;
+				}
+
+				// We loop the bracket contents from the latest to
+				// the first. From down to up!
+				r = bracket.length;
+
+				// Start looping
+				while( r != 0 ) 
+				{
+					// Decrease the index of the bracket-array
+					r--;
+					// Clear the temporary string
+					temp = "";
+					// Loop the array-entry-content
+					for ( let c = 0; c < bracket[r].length; c++ )
+					{
+						switch( bracket[r][c] )
+						{
+							// The white-space, tabulator, cr and lf characters
+							// are not needed characters, therefor we ignore
+							// them for the term(), but collect them for the
+							// temporary string.
+							case ' ': case '\t': case '\r': case '\n':
+								temp += bracket[r][c];
+								break;
+							// The $ is a placeholder for a bracket-entry in
+							// the upper-level entry, which points to it. 
+							// Therefore we replace the $ character by the
+							// calcualte result of the specific bracket-entry.
+							case '$':
+								temp += bracket[r+1];
+								term( bracket[r+1] );
+								token = "";
+								break;
+							// Before start an operation, we check if a valid
+							// token-number has been read and send it to the
+							// term() function, after then, we run the 
+							// operation.
+							case '+': case '-': case '*': case '/': case ':':
+								temp += bracket[r][c];
+								if ( token )
+									term( token );
+								term( bracket[r][c] );
+								token = "";
+								break;
+							// Collect the characters for the token
+							default:
+								temp += bracket[r][c];
+								token += bracket[r][c];
+								break;
+						}
+					}
+					// After the iteration complete, we check if there
+					// is one more token to send to the term()-function.
+					if ( token )
+						term( token );
+					// Output the array-entry content in the console
+					console.log(temp + " = " + result);
+					// Update the array-entry with the result of 
+					// the specific operation
+					bracket[r] = result;
+					// Clear the global variables to use them
+					// for the next operation
+					result = 0.0;
+					opertr = 0;
+					token = "";
+				}
+
+				// If an term-error has been determined, we haven't a 
+				// valid result.
+				if ( errstate === false )
+				{
+					output.innerHTML = "Calculation succeed :-)<br />" + 
+										event.target.value + " = " + bracket[0];
+					output.style.color = "green";
+				}
+				// Reset for the next possible input
+				errstate = false;
+			}
+
+			// Connect the event-handler to the input-field
+			document.getElementById("expression").addEventListener(
+				"keydown",
+				function( event )
+				{
+					// Run the calculation, when enter!
+					if ( event.keyCode == 13 )
+						input( event );	
+				}
+			);
+		</script>
+	</body>
+</html>
