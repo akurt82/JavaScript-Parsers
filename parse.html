@@ -1,0 +1,208 @@
+﻿<!doctype html>
+
+<html>
+	<head>
+		<title>Test</title>
+		<script src="https://ajax.googleapis.com/ajax/libs/jquery/3.3.1/jquery.min.js"></script>
+		<script type = "text/javascript">
+			var deklaration = new Array();
+
+			function uLength( utfstr )
+			{
+				var c = 0;
+				var p = 0;
+				for ( p = 0; p < utfstr.length; p++ )
+				{
+					if ( ( utfstr.charAt(p) >= 0 ) && ( utfstr.charAt(p) <= 127 ) )
+						c++;
+					else
+					if ( utfstr.charAt(p) == 240 )
+					{
+						p++;
+						if ( ( utfstr.charAt(p) >= 0 ) && ( utfstr.charAt(p) <= 244 ) )
+							c++;
+					}
+					else
+					if ( utfstr.charAt(p) == 224 )
+					{
+						p++;
+						if ( ( utfstr.charAt(p) >= 0 ) && ( utfstr.charAt(p) <= 239 ) )
+							c++;
+					}
+					else
+					if ( utfstr.charAt(p) == 192 )
+					{
+						p++;
+						if ( ( utfstr.charAt(p) >= 0 ) && ( utfstr.charAt(p) <= 223 ) )
+							c++;
+					}
+				}
+				return c;
+			}
+			function uLeft( utfstr, total )
+			{
+
+			}
+			function uRight( utfstr, total )
+			{
+
+			}
+			function uMid( utfstr, total )
+			{
+
+			}
+			function uTrim( utfstr )
+			{
+
+			}
+			function cmdKasten( dataset )
+			{
+				var t = "";
+				var x = 0, y = 0, w = 0, h = 0, c = "";
+				x = dataset[1];
+				y = dataset[3];
+				w = dataset[5];
+				h = dataset[7];
+				if ( dataset[9].charAt(0) == '#' )
+					c = dataset[9];
+				else {
+					c = "rgb( " + dataset[9] + ", " + dataset[11] + ", " + dataset[13] + ")";
+				}
+				$("body").append( '<div style = "background-color:' +
+					c +
+                                        ';position:absolute;absolute;' +
+                                        'left:'+x+
+					'px;top:'+y+
+					'px;width:'+w+
+					'px;height:'+h+
+					'px;"></div>'
+				);
+			}
+			function cmdMessage( dataset )
+			{
+				var t = ""; var n = 0;
+				for ( n = 1; n < dataset.length; n++ ) t += dataset[n] + " ";
+				alert(t);
+			}
+			function cmdDeclare( dataset )
+			{
+				var n = 0; var t; var g = 0; var d = 0;
+				// *** //
+				for ( n = 1; n < dataset.length; n++ )
+				{
+					switch ( g )
+					{
+						case 0:
+							g = 1;
+							deklaration[d] = new Array();
+							deklaration[d][0] = dataset[n].toLowerCase(); // Bezeichner
+							break;
+						case 1:
+							g = 2;
+							if ( dataset[n].toLowerCase() != "as" )
+								n = dataset.length; // Abbruch
+							break;
+						case 2:
+							g = 3;
+							deklaration[d][1] = dataset[n].toLowerCase(); // Datentyp
+							break;
+						case 3:
+							if ( dataset[n].toLowerCase() == "," )
+								g = 0;
+							break;
+					}
+				}
+			}
+			function parseLine ( contextfree )
+			{
+				var t = new Array();
+				var n = 0; var s = "";
+				// *** //
+				for ( n = 0; n < contextfree.length; n++ )
+				{
+					switch ( contextfree.charAt(n) )
+					{
+						case ' ': case '\t': case '\n': case '\r':
+							if ( s != "" )
+							t[t.length] = s;
+							s = "";
+							break;
+						case '.': case ',': case '+': case '-': case '*': case '/':
+						case '=': case '\\': case '!': case '~': case '#': case '@':
+						case '<': case '>': case '§': case '&': case '(': case ')':
+						case '[': case ']': case '{': case '}': case ':': case ';':
+							t[t.length] = s;
+							s = "";
+							t[t.length] = contextfree.charAt(n);
+							break;
+						default:
+							s += contextfree.charAt(n);
+
+					}
+				}
+				// *** //
+				if ( s != "" ) t[t.length] = s;
+				s = "";
+				// *** //
+				if ( t[0].toLowerCase() == "message" ) cmdMessage(t);
+				else if ( t[0].toLowerCase() == "dim" ) cmdDeclare(t);
+				else if ( t[0].toLowerCase() == "kasten" ) cmdKasten(t);
+			}
+			function parse ( contextfree )
+			{
+				var n = 0; var s = "";
+				// *** //
+				for ( n = 0; n < contextfree.length; n++ )
+				{
+					switch ( contextfree.charAt(n) )
+					{
+						case '\n': case '\r':
+							if ( s != "" )
+							parseLine( s );
+							s = "";
+							break;
+						default:
+							s += contextfree.charAt(n);
+
+					}
+				}
+				// *** //
+				if ( s != "" ) parseLine( s );
+			}
+		</script>
+		<style type = "text/css">
+
+		</style>
+	</head>
+	<body>
+
+		<div id = "code">
+
+			Message Das ist eine tolle Nachricht!
+
+			Kasten 50, 80, 300, 270, 112, 82, 226
+
+			Dim X As Integer, Y as Long, N As Number, C As Char, D As Double, S As String
+
+		</div>
+
+		<script type = "text/javascript">
+/*
+			alert("Abc".length +"\n" +
+                              "Şah".length +"\n" +
+                              "Çakıl".length);
+			alert(uLength("Abc") +"\n" +
+                              uLength("Şah") +"\n" +
+                              uLength("Çakıl"));
+*/
+			//var lx = "\u015F\U011F\U00E7";
+			//alert( lx.charAt(4) );
+
+			var t = $("#code").html();
+			$("#code").html("");
+			parse( t );
+
+		</script>
+
+	</body>
+</html>
